@@ -1,7 +1,10 @@
-package android.santosh.com.workpopcodechallenge;
+package android.santosh.com.workpopcodechallenge.controllers;
 
 import android.content.Context;
 import android.os.Handler;
+import android.santosh.com.workpopcodechallenge.FileFetchListener;
+import android.santosh.com.workpopcodechallenge.FileVO;
+import android.santosh.com.workpopcodechallenge.R;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -17,6 +20,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,7 +56,7 @@ public class WorkPopController {
                 public void run() {
                     if (fileList != null && fileList.size() > 0) {
                         Log.d(TAG, "fetchFileList() from memory fileList.size(): " + fileList.size());
-                        notifyFileFetchSuccess(fileList);
+                        loadFileSize();
                     } else {
                         String fileListAsJsonString = getFileListAsString();
                         if (TextUtils.isEmpty(fileListAsJsonString)) {
@@ -60,7 +65,7 @@ public class WorkPopController {
                             JsonArray jsonArray = getFileListJsonArray(fileListAsJsonString);
                             fileList = Arrays.asList(gson.fromJson(jsonArray, FileVO[].class));
                             Log.d(TAG, "fetchFileList() from JSON file fileList.size(): " + fileList.size());
-                            notifyFileFetchSuccess(fileList);
+                            loadFileSize();
                         }
                     }
                 }
@@ -95,6 +100,37 @@ public class WorkPopController {
         //Log.d(TAG, "getFileListJsonArray, jsonArray: " + jsonArray);
         return jsonObject.getAsJsonArray("files");
 
+    }
+
+    private void loadFileSize() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    for (FileVO fileVO : fileList) {
+                        //TODO: check if the file exists locally and load the file size from that.
+                        HttpURLConnection httpUrlConnection = null;
+                        try {
+                            URL url = new URL(fileVO.getUrl());
+                            httpUrlConnection = (HttpURLConnection) url.openConnection();
+                            httpUrlConnection.setRequestMethod("HEAD");
+                            httpUrlConnection.getInputStream();
+                            //fileList.get(fileList.indexOf(fileVO)).setFileSize(httpUrlConnection.getContentLength());
+                            fileVO.setFileSize(httpUrlConnection.getContentLength());
+                        } catch (IOException e) {
+                            Log.e(TAG, "IOException thrown for file: " + fileVO.getName());
+                            //fileList.get(fileList.indexOf(fileVO)).setFileSize(0);
+                            fileVO.setFileSize(0);
+                        } finally {
+                            if (httpUrlConnection != null) {
+                                httpUrlConnection.disconnect();
+                            }
+                        }
+                    }
+                    notifyFileFetchSuccess(fileList);
+                }
+            });
+        }
     }
 
     public void addFileFetchListener(FileFetchListener fileFetchListener) {

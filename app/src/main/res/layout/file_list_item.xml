@@ -4,17 +4,46 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="75dp"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:gravity="center">
 
-    <TextView
-        android:id="@+id/file_name_text_view"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_gravity="center"
-        android:text="TEST"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginLeft="10dp"/>
+        android:layout_weight="3.5"
+        android:layout_marginLeft="10dp">
+        <TextView
+            android:id="@+id/file_name_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TEST"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/file_information_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TEST"
+            android:textSize="12sp"
+            android:textStyle="italic"/>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/download_view"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:layout_weight="0.5"
+        android:layout_marginRight="10dp">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@mipmap/ic_file_download_black"
+            android:layout_gravity="center"/>
+    </FrameLayout>
+
+
 
 </LinearLayout>

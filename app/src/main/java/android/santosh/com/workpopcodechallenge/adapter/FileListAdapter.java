@@ -4,6 +4,7 @@ import android.content.Context;
 import android.santosh.com.workpopcodechallenge.FileVO;
 import android.santosh.com.workpopcodechallenge.R;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,8 @@ import java.util.List;
 public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static String TAG = FileListAdapter.class.getSimpleName();
 
+    private static final long MEGABYTE = 1024L * 1024L;
+
     private List<FileVO> fileList = new ArrayList<>();
     private Context context;
 
@@ -26,7 +29,6 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     public FileListAdapter(Context context) {
         this.context = context;
     }
-
 
 
     @Override
@@ -42,6 +44,8 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             FileVO fileVO = fileList.get(position);
 
             fileListViewHolder.fileNameTextView.setText(fileVO.getName());
+            Log.d(TAG, "onBindViewHolder fileVO.getFileSize(): " + fileVO.getFileSize());
+            fileListViewHolder.fileInformationTextView.setText(String.format("%s MB", fileVO.getFileSize() / MEGABYTE));
         }
     }
 
@@ -50,7 +54,7 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return fileList.size();
     }
 
-    public void setFileList(List<FileVO> fileList){
+    public void setFileList(List<FileVO> fileList) {
         this.fileList = fileList;
         notifyDataSetChanged();
     }
@@ -58,10 +62,12 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public class FileListViewHolder extends RecyclerView.ViewHolder {
         TextView fileNameTextView;
+        TextView fileInformationTextView;
 
         public FileListViewHolder(View itemView) {
             super(itemView);
             fileNameTextView = itemView.findViewById(R.id.file_name_text_view);
+            fileInformationTextView = itemView.findViewById(R.id.file_information_text_view);
         }
     }
 }
