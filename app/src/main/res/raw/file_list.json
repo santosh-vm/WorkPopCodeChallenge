@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "name": "George Washington",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/a.txt"
+    },
+    {
+      "name": "John Adams",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/b.txt"
+    },
+    {
+      "name": "Thomas Jefferson",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/c.txt"
+    },
+    {
+      "name": "James Madison",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/d.txt"
+    },
+    {
+      "name": "James Monroe",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/e.txt"
+    },
+    {
+      "name": "John Quincy Adams",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/f.txt"
+    },
+    {
+      "name": "Andrew Jackson",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/g.txt"
+    },
+    {
+      "name": "Martin Van Buren",
+      "url": "https://s3.amazonaws.com/interview.workpop.com/files/h.txt"
+    }
+  ]
+}
