@@ -149,10 +149,14 @@ public class WorkPopController implements DownloadFileListener {
 
     private void loadFileSize(FileVO fileVO) {
         if (diskController.doesFileExist(fileVO.getUrl())) {
-            //File exists, get the actual file size;
-            File localFile = diskController.getFileByUrl(fileVO.getUrl());
-            if (localFile != null) {
-                fileVO.setFileSize(localFile.length());
+            if (diskController.getCurrentFileDownloadUrl() != null && fileVO.getUrl().equalsIgnoreCase(diskController.getCurrentFileDownloadUrl())) {
+                fetchFileSizeFromWeb(fileVO);
+            }else {
+                //File exists, get the actual file size;
+                File localFile = diskController.getFileByUrl(fileVO.getUrl());
+                if (localFile != null) {
+                    fileVO.setFileSize(localFile.length());
+                }
             }
         } else {
             fetchFileSizeFromWeb(fileVO);
