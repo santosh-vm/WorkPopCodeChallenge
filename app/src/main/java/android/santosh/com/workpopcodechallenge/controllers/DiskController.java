@@ -43,7 +43,7 @@ public class DiskController {
     private static String MAIN_FOLDER_PATH = Environment.getExternalStorageDirectory() + File.separator + "WORKPOP";
 
     public DiskController(Context context, Handler uiHandler) {
-        this.executorService = Executors.newFixedThreadPool(2);
+        this.executorService = Executors.newSingleThreadExecutor();
         this.context = context;
         this.uiHandler = uiHandler;
         createMainDirectory();
@@ -166,7 +166,7 @@ public class DiskController {
                         currentBytesCompleted = 0;
                         currentFileDownloadUrl = null;
                         //TODO: File download complete, remove fileVO from queue
-                        downloadQueue.poll();
+                        //downloadQueue.poll();
                         notifyDownloadFinished(fileVO);
                         startNextDownload();
 

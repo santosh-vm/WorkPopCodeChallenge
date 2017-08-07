@@ -1,5 +1,6 @@
 package android.santosh.com.workpopcodechallenge.activity;
 
+import android.content.Intent;
 import android.santosh.com.workpopcodechallenge.interfaces.FileFetchListener;
 import android.santosh.com.workpopcodechallenge.FileVO;
 import android.santosh.com.workpopcodechallenge.R;
@@ -109,6 +110,13 @@ public class MainActivity extends BaseActivity implements FileFetchListener, Fil
     public void onDownloadFileClicked(int position, FileVO fileVO) {
         Log.d(TAG, "onDownloadFileClicked position: " + position + ", file name: " + fileVO.getName());
         //TODO: Queueing mechanism.
-        workPopAPI.getDiskController().enqueueDownload(fileVO);
+        workPopAPI.getDiskController().downloadFile(fileVO);
+    }
+
+    @Override
+    public void onRootViewClicked(int position, FileVO fileVO) {
+        Intent intent = new Intent(this,DetailsActivity.class);
+        intent.putExtra(FILE_URL_INTENT_KEY,fileVO.getUrl());
+        startActivity(intent);
     }
 }

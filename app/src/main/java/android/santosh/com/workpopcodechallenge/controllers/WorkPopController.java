@@ -35,14 +35,14 @@ import java.util.concurrent.Executors;
  * Created by Santosh on 8/5/17.
  */
 
-public class WorkPopController implements DownloadFileListener{
+public class WorkPopController implements DownloadFileListener {
     private static String TAG = WorkPopController.class.getSimpleName();
     private Context context;
     private Handler uiHandler;
     private Gson gson;
     private List<FileVO> fileList = new ArrayList<>();
     private ExecutorService executorService;
-    private List<FileFetchListener> fileFetchListeners = Collections.synchronizedList(new ArrayList<FileFetchListener>());
+    private final List<FileFetchListener> fileFetchListeners = Collections.synchronizedList(new ArrayList<FileFetchListener>());
     private DiskController diskController;
 
     public WorkPopController(Context context, DiskController diskController, Handler uiHandler) {
@@ -52,6 +52,17 @@ public class WorkPopController implements DownloadFileListener{
         this.uiHandler = uiHandler;
         this.context = context;
         gson = new Gson();
+    }
+
+    public synchronized FileVO getFileVOFromFileList(String fileURl) {
+        if (fileList != null && fileList.size() > 0) {
+            for (FileVO fileVO : fileList) {
+                if (fileVO.getUrl().equalsIgnoreCase(fileURl)) {
+                    return fileVO;
+                }
+            }
+        }
+        return null;
     }
 
     public void fetchFileList() {
@@ -121,37 +132,36 @@ public class WorkPopController implements DownloadFileListener{
         }
     }
 
-    private void loadFileState(FileVO fileVO){
-        if(diskController.doesFileExist(fileVO.getUrl())){
-            if(diskController.getCurrentFileDownloadUrl()!=null && fileVO.getUrl().equalsIgnoreCase(diskController.getCurrentFileDownloadUrl())){
+    private void loadFileState(FileVO fileVO) {
+        if (diskController.doesFileExist(fileVO.getUrl())) {
+            if (diskController.getCurrentFileDownloadUrl() != null && fileVO.getUrl().equalsIgnoreCase(diskController.getCurrentFileDownloadUrl())) {
                 fileVO.setFileState(FileVO.FileState.DOWNLOADING);
                 fileVO.setBytesCompleted(diskController.getCurrentBytesCompleted());
             } else {
                 fileVO.setFileState(FileVO.FileState.DOWNLOADED);
             }
-        } else if(diskController.isFileVOInDownloadQueue(fileVO)){
+        } else if (diskController.isFileVOInDownloadQueue(fileVO)) {
             fileVO.setFileState(FileVO.FileState.QUEUED);
-        }
-        else {
+        } else {
             fileVO.setFileState(FileVO.FileState.NOT_EXIST);
         }
     }
 
-    private void loadFileSize(FileVO fileVO){
-        if(diskController.doesFileExist(fileVO.getUrl())){
+    private void loadFileSize(FileVO fileVO) {
+        if (diskController.doesFileExist(fileVO.getUrl())) {
             //File exists, get the actual file size;
             File localFile = diskController.getFileByUrl(fileVO.getUrl());
-            if(localFile!=null){
+            if (localFile != null) {
                 fileVO.setFileSize(localFile.length());
             }
-        }else {
+        } else {
             fetchFileSizeFromWeb(fileVO);
         }
     }
 
-    private void fetchFileSizeFromWeb(FileVO fileVO){
+    private void fetchFileSizeFromWeb(FileVO fileVO) {
         //Doing this to avoid repeated network calls when refreshing the FileList.
-        if(fileVO.getFileSize() == 0) {
+        if (fileVO.getFileSize() == 0) {
             HttpURLConnection httpUrlConnection = null;
             try {
                 URL url = new URL(fileVO.getUrl());
@@ -183,27 +193,31 @@ public class WorkPopController implements DownloadFileListener{
     }
 
     private void notifyFileFetchSuccess(final List<FileVO> fileList) {
-        if (fileFetchListeners != null && fileFetchListeners.size() > 0) {
-            for (final FileFetchListener fileFetchListener : fileFetchListeners) {
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        fileFetchListener.onFileFetchSuccess(fileList);
-                    }
-                });
+        synchronized (fileFetchListeners) {
+            if (fileFetchListeners != null && fileFetchListeners.size() > 0) {
+                for (final FileFetchListener fileFetchListener : fileFetchListeners) {
+                    uiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            fileFetchListener.onFileFetchSuccess(fileList);
+                        }
+                    });
+                }
             }
         }
     }
 
     private void notifyFileFetchFailure() {
-        if (fileFetchListeners != null && fileFetchListeners.size() > 0) {
-            for (final FileFetchListener fileFetchListener : fileFetchListeners) {
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        fileFetchListener.onFileFetchFailure();
-                    }
-                });
+        synchronized (fileFetchListeners) {
+            if (fileFetchListeners.size() > 0) {
+                for (final FileFetchListener fileFetchListener : fileFetchListeners) {
+                    uiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            fileFetchListener.onFileFetchFailure();
+                        }
+                    });
+                }
             }
         }
     }
@@ -214,7 +228,7 @@ public class WorkPopController implements DownloadFileListener{
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if(fileList!=null && fileList.contains(fileVO)){
+                    if (fileList != null && fileList.contains(fileVO)) {
                         fileList.get(fileList.indexOf(fileVO)).setBytesCompleted(bytesCompleted);
                         fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.DOWNLOADING);
                         notifyFileFetchSuccess(fileList);
@@ -230,7 +244,7 @@ public class WorkPopController implements DownloadFileListener{
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if(fileList!=null && fileList.contains(fileVO)){
+                    if (fileList != null && fileList.contains(fileVO)) {
                         fileList.get(fileList.indexOf(fileVO)).setBytesCompleted(0);
                         fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.DOWNLOADED);
                         notifyFileFetchSuccess(fileList);
@@ -258,7 +272,7 @@ public class WorkPopController implements DownloadFileListener{
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if(fileList!=null && fileList.contains(fileVO)){
+                    if (fileList != null && fileList.contains(fileVO)) {
                         fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.QUEUED);
                         notifyFileFetchSuccess(fileList);
                     }
@@ -269,6 +283,6 @@ public class WorkPopController implements DownloadFileListener{
 
     @Override
     public void onFileAlreadyInQueue(FileVO fileVO) {
-        Log.d(TAG,"onFileAlreadyInQueue File Name: "+fileVO.getName());
+        Log.d(TAG, "onFileAlreadyInQueue File Name: " + fileVO.getName());
     }
 }

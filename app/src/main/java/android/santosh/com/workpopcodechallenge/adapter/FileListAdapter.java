@@ -57,13 +57,13 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
             //Setting the visibility of all the views based on the file state
             switch (fileVO.getFileState()) {
-                case NOT_EXIST:
-                    fileListViewHolder.downloadView.setVisibility(View.VISIBLE);
-                    fileListViewHolder.openView.setVisibility(View.GONE);
-                    fileListViewHolder.queueView.setVisibility(View.GONE);
-                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.GONE);
-                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.GONE);
-                    break;
+//                case NOT_EXIST:
+//                    fileListViewHolder.downloadView.setVisibility(View.VISIBLE);
+//                    fileListViewHolder.openView.setVisibility(View.GONE);
+//                    fileListViewHolder.queueView.setVisibility(View.GONE);
+//                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.GONE);
+//                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.GONE);
+//                    break;
                 case DOWNLOADED:
                     fileListViewHolder.downloadView.setVisibility(View.GONE);
                     fileListViewHolder.openView.setVisibility(View.VISIBLE);
@@ -71,29 +71,30 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.GONE);
                     fileListViewHolder.downloadedPercentageTextView.setVisibility(View.GONE);
                     break;
-                case DOWNLOADING:
-                    fileListViewHolder.downloadView.setVisibility(View.GONE);
-                    fileListViewHolder.openView.setVisibility(View.GONE);
-                    fileListViewHolder.queueView.setVisibility(View.GONE);
-                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.VISIBLE);
-                    fileListViewHolder.downloadedContentSizeTextView.setText(String.format(Locale.US, "%s - ", fileVO.getBytesCompleted() / MEGABYTE));
-                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.VISIBLE);
-                    int percentageCompleted = (int) ((fileVO.getBytesCompleted() * 100) / fileVO.getFileSize());
-                    fileListViewHolder.downloadedPercentageTextView.setText(String.format(Locale.US, " - %s percent", percentageCompleted));
-                    break;
-                case QUEUED:
-                    fileListViewHolder.downloadView.setVisibility(View.GONE);
-                    fileListViewHolder.openView.setVisibility(View.GONE);
-                    fileListViewHolder.queueView.setVisibility(View.VISIBLE);
-                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.GONE);
-                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.GONE);
-                    break;
-                default:
-                    break;
+//                case DOWNLOADING:
+//                    fileListViewHolder.downloadView.setVisibility(View.GONE);
+//                    fileListViewHolder.openView.setVisibility(View.GONE);
+//                    fileListViewHolder.queueView.setVisibility(View.GONE);
+//                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.VISIBLE);
+//                    fileListViewHolder.downloadedContentSizeTextView.setText(String.format(Locale.US, "%s - ", fileVO.getBytesCompleted() / MEGABYTE));
+//                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.VISIBLE);
+//                    int percentageCompleted = (int) ((fileVO.getBytesCompleted() * 100) / fileVO.getFileSize());
+//                    fileListViewHolder.downloadedPercentageTextView.setText(String.format(Locale.US, " - %s percent", percentageCompleted));
+//                    break;
+//                case QUEUED:
+//                    fileListViewHolder.downloadView.setVisibility(View.GONE);
+//                    fileListViewHolder.openView.setVisibility(View.GONE);
+//                    fileListViewHolder.queueView.setVisibility(View.VISIBLE);
+//                    fileListViewHolder.downloadedContentSizeTextView.setVisibility(View.GONE);
+//                    fileListViewHolder.downloadedPercentageTextView.setVisibility(View.GONE);
+//                    break;
+//                default:
+//                    break;
             }
 
             fileListViewHolder.downloadView.setOnClickListener(new DownloadViewClickListener(position, fileVO, fileListClickInterface));
             fileListViewHolder.openView.setOnClickListener(new FileOpenClickListener(position, fileVO));
+            fileListViewHolder.rootView.setOnClickListener(new RootViewClickListener(position, fileVO, fileListClickInterface));
         }
     }
 
@@ -116,6 +117,7 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         View downloadView;
         View openView;
         View queueView;
+        View rootView;
 
         public FileListViewHolder(View itemView) {
             super(itemView);
@@ -134,6 +136,7 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             openView.setVisibility(View.GONE);
             queueView = itemView.findViewById(R.id.queue_view);
             queueView.setVisibility(View.GONE);
+            rootView = itemView.findViewById(R.id.root_view);
 
         }
     }
@@ -167,12 +170,29 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         @Override
         public void onClick(View view) {
             File fileToOpen = workPopAPI.getDiskController().getFileByUrl(fileVO.getUrl());
-            if(fileToOpen!=null){
+            if (fileToOpen != null) {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.setDataAndType(Uri.fromFile(fileToOpen), "text/plain");
                 context.startActivity(intent);
             }
+        }
+    }
+
+    private class RootViewClickListener implements View.OnClickListener {
+        private int position;
+        private FileVO fileVO;
+        private FileListClickInterface fileListClickInterface;
+
+        RootViewClickListener(int position, FileVO fileVO, FileListClickInterface fileListClickInterface) {
+            this.position = position;
+            this.fileVO = fileVO;
+            this.fileListClickInterface = fileListClickInterface;
+        }
+
+        @Override
+        public void onClick(View view) {
+            fileListClickInterface.onRootViewClicked(position, fileVO);
         }
     }
 }

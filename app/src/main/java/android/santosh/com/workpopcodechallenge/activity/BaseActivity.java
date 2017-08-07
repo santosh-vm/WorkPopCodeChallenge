@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 
 public class BaseActivity extends AppCompatActivity {
     protected WorkPopAPI workPopAPI;
+    protected static String FILE_URL_INTENT_KEY = "file_url";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

@@ -8,4 +8,5 @@ import android.santosh.com.workpopcodechallenge.FileVO;
 
 public interface FileListClickInterface {
     void onDownloadFileClicked(int position, FileVO fileVO);
+    void onRootViewClicked(int position, FileVO fileVO);
 }
