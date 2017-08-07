@@ -108,6 +108,7 @@ public class MainActivity extends BaseActivity implements FileFetchListener, Fil
     @Override
     public void onDownloadFileClicked(int position, FileVO fileVO) {
         Log.d(TAG, "onDownloadFileClicked position: " + position + ", file name: " + fileVO.getName());
-        workPopAPI.getDiskController().downloadFile(fileVO);
+        //TODO: Queueing mechanism.
+        workPopAPI.getDiskController().enqueueDownload(fileVO);
     }
 }

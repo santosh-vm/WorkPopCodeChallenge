@@ -60,7 +60,7 @@ public class WorkPopController implements DownloadFileListener{
                 @Override
                 public void run() {
                     if (fileList != null && fileList.size() > 0) {
-                        Log.d(TAG, "fetchFileList() from memory fileList.size(): " + fileList.size());
+                        //Log.d(TAG, "fetchFileList() from memory fileList.size(): " + fileList.size());
                         loadFileDetails();
                     } else {
                         String fileListAsJsonString = getFileListAsString();
@@ -69,7 +69,7 @@ public class WorkPopController implements DownloadFileListener{
                         } else {
                             JsonArray jsonArray = getFileListJsonArray(fileListAsJsonString);
                             fileList = Arrays.asList(gson.fromJson(jsonArray, FileVO[].class));
-                            Log.d(TAG, "fetchFileList() from JSON file fileList.size(): " + fileList.size());
+                            //Log.d(TAG, "fetchFileList() from JSON file fileList.size(): " + fileList.size());
                             loadFileDetails();
                         }
                     }
@@ -129,7 +129,10 @@ public class WorkPopController implements DownloadFileListener{
             } else {
                 fileVO.setFileState(FileVO.FileState.DOWNLOADED);
             }
-        } else {
+        } else if(diskController.isFileVOInDownloadQueue(fileVO)){
+            fileVO.setFileState(FileVO.FileState.QUEUED);
+        }
+        else {
             fileVO.setFileState(FileVO.FileState.NOT_EXIST);
         }
     }
@@ -247,5 +250,25 @@ public class WorkPopController implements DownloadFileListener{
                 }
             });
         }
+    }
+
+    @Override
+    public void onDownloadFileEnqueued(final FileVO fileVO) {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if(fileList!=null && fileList.contains(fileVO)){
+                        fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.QUEUED);
+                        notifyFileFetchSuccess(fileList);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onFileAlreadyInQueue(FileVO fileVO) {
+        Log.d(TAG,"onFileAlreadyInQueue File Name: "+fileVO.getName());
     }
 }

@@ -17,7 +17,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,11 +38,12 @@ public class DiskController {
     //Used in restoring state of fileList in WorkPopController when user backs out of the app.
     private long currentBytesCompleted = 0;
     private String currentFileDownloadUrl = null;
+    private Queue<FileVO> downloadQueue = new LinkedList<FileVO>();
 
     private static String MAIN_FOLDER_PATH = Environment.getExternalStorageDirectory() + File.separator + "WORKPOP";
 
     public DiskController(Context context, Handler uiHandler) {
-        this.executorService = Executors.newSingleThreadExecutor();
+        this.executorService = Executors.newFixedThreadPool(2);
         this.context = context;
         this.uiHandler = uiHandler;
         createMainDirectory();
@@ -84,6 +87,45 @@ public class DiskController {
         return null;
     }
 
+    public boolean isFileVOInDownloadQueue(FileVO fileVO) {
+        if (downloadQueue != null
+                && downloadQueue.size() > 0
+                && downloadQueue.contains(fileVO)) {
+            return true;
+        }
+        return false;
+    }
+
+    public void enqueueDownload(final FileVO fileVO) {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (downloadQueue != null) {
+                        if (downloadQueue.size() > 0) {
+                            if (downloadQueue.contains(fileVO)) {
+                                notifyFileDownloadAlreadyEnqueued(fileVO);
+                            } else {
+                                //Add file to Queue and notify to UI.
+                                downloadQueue.add(fileVO);
+                                notifyFileDownloadEnqueued(fileVO);
+                            }
+                        } else {
+                            downloadQueue.add(fileVO);
+                            downloadFile(fileVO);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private void startNextDownload() {
+        if (downloadQueue != null && downloadQueue.size() > 0) {
+            downloadFile(downloadQueue.peek());
+        }
+    }
+
     public void downloadFile(final FileVO fileVO) {
         if (executorService != null && !executorService.isShutdown()) {
             executorService.execute(new Runnable() {
@@ -123,7 +165,10 @@ public class DiskController {
 
                         currentBytesCompleted = 0;
                         currentFileDownloadUrl = null;
+                        //TODO: File download complete, remove fileVO from queue
+                        downloadQueue.poll();
                         notifyDownloadFinished(fileVO);
+                        startNextDownload();
 
                     } catch (IOException iex) {
                         Log.e(TAG, "downloadFile exception caught: " + iex.getMessage());
@@ -177,10 +222,26 @@ public class DiskController {
         }
     }
 
-    private void notifyFileClear(){
+    private void notifyFileClear() {
         if (downloadFileListeners != null && downloadFileListeners.size() > 0) {
             for (DownloadFileListener downloadFileListener : downloadFileListeners) {
                 downloadFileListener.onFilesCleared();
+            }
+        }
+    }
+
+    private void notifyFileDownloadEnqueued(FileVO fileVO) {
+        if (downloadFileListeners != null && downloadFileListeners.size() > 0) {
+            for (DownloadFileListener downloadFileListener : downloadFileListeners) {
+                downloadFileListener.onDownloadFileEnqueued(fileVO);
+            }
+        }
+    }
+
+    private void notifyFileDownloadAlreadyEnqueued(FileVO fileVO) {
+        if (downloadFileListeners != null && downloadFileListeners.size() > 0) {
+            for (DownloadFileListener downloadFileListener : downloadFileListeners) {
+                downloadFileListener.onFileAlreadyInQueue(fileVO);
             }
         }
     }

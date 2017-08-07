@@ -84,6 +84,25 @@
             android:layout_gravity="center"/>
     </FrameLayout>
 
+    <FrameLayout
+        android:id="@+id/queue_view"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:layout_weight="0.5"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/ripple">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="QUEUED"
+            android:textColor="@android:color/black"
+            android:textAllCaps="true"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:layout_gravity="center"/>
+    </FrameLayout>
+
 
 
 </LinearLayout>

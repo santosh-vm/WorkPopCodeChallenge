@@ -10,4 +10,6 @@ public interface DownloadFileListener {
     void onDownloadProgress(FileVO fileVO, long bytesCompleted);
     void onDownloadFinished(FileVO fileVO);
     void onFilesCleared();
+    void onDownloadFileEnqueued(FileVO fileVO);
+    void onFileAlreadyInQueue(FileVO fileVO);
 }

@@ -5,7 +5,7 @@ package android.santosh.com.workpopcodechallenge;
  */
 
 public class FileVO {
-    public static enum FileState {DOWNLOADED, DOWNLOADING, NOT_EXIST}
+    public static enum FileState {DOWNLOADED, DOWNLOADING, NOT_EXIST, QUEUED}
 
     private String name;
     private String url;
