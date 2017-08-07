@@ -1,4 +1,6 @@
-package android.santosh.com.workpopcodechallenge;
+package android.santosh.com.workpopcodechallenge.interfaces;
+
+import android.santosh.com.workpopcodechallenge.FileVO;
 
 import java.util.List;
 
