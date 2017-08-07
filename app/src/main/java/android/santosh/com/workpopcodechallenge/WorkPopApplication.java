@@ -2,6 +2,7 @@ package android.santosh.com.workpopcodechallenge;
 
 import android.app.Application;
 import android.os.Handler;
+import android.santosh.com.workpopcodechallenge.controllers.DiskController;
 import android.santosh.com.workpopcodechallenge.controllers.WorkPopController;
 
 /**
@@ -14,8 +15,9 @@ public class WorkPopApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        WorkPopController workPopController = new WorkPopController(this, new Handler());
-        workPopAPI = new WorkPopAPI(workPopController);
+        DiskController diskController = new DiskController(this, new Handler());
+        WorkPopController workPopController = new WorkPopController(this, diskController, new Handler());
+        workPopAPI = new WorkPopAPI(workPopController,diskController);
     }
 
     public WorkPopAPI getWorkPopAPI() {

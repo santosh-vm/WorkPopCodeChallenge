@@ -21,13 +21,34 @@
             android:text="TEST"
             android:textSize="14sp"
             android:textStyle="bold"/>
-        <TextView
-            android:id="@+id/file_information_text_view"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TEST"
-            android:textSize="12sp"
-            android:textStyle="italic"/>
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/file_downloaded_bytes_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TEST - "
+                android:textSize="12sp"
+                android:textStyle="italic"/>
+            <TextView
+                android:id="@+id/file_size_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TEST"
+                android:textSize="12sp"
+                android:textStyle="italic"/>
+            <TextView
+                android:id="@+id/file_downloaded_percentage_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" - TEST"
+                android:textSize="12sp"
+                android:textStyle="italic"/>
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <FrameLayout
@@ -36,11 +57,30 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:layout_weight="0.5"
-        android:layout_marginRight="10dp">
+        android:layout_marginRight="10dp"
+        android:background="@drawable/ripple">
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@mipmap/ic_file_download_black"
+            android:layout_gravity="center"/>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/open_view"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:layout_weight="0.5"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/ripple">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OPEN"
+            android:textColor="@android:color/holo_blue_light"
+            android:textStyle="bold"
+            android:textSize="12sp"
             android:layout_gravity="center"/>
     </FrameLayout>
 

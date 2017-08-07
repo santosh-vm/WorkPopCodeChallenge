@@ -2,7 +2,8 @@ package android.santosh.com.workpopcodechallenge.controllers;
 
 import android.content.Context;
 import android.os.Handler;
-import android.santosh.com.workpopcodechallenge.FileFetchListener;
+import android.santosh.com.workpopcodechallenge.interfaces.DownloadFileListener;
+import android.santosh.com.workpopcodechallenge.interfaces.FileFetchListener;
 import android.santosh.com.workpopcodechallenge.FileVO;
 import android.santosh.com.workpopcodechallenge.R;
 import android.text.TextUtils;
@@ -14,6 +15,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +35,7 @@ import java.util.concurrent.Executors;
  * Created by Santosh on 8/5/17.
  */
 
-public class WorkPopController {
+public class WorkPopController implements DownloadFileListener{
     private static String TAG = WorkPopController.class.getSimpleName();
     private Context context;
     private Handler uiHandler;
@@ -41,9 +43,12 @@ public class WorkPopController {
     private List<FileVO> fileList = new ArrayList<>();
     private ExecutorService executorService;
     private List<FileFetchListener> fileFetchListeners = Collections.synchronizedList(new ArrayList<FileFetchListener>());
+    private DiskController diskController;
 
-    public WorkPopController(Context context, Handler uiHandler) {
+    public WorkPopController(Context context, DiskController diskController, Handler uiHandler) {
         this.executorService = Executors.newSingleThreadExecutor();
+        this.diskController = diskController;
+        diskController.addDownloadFileListener(this);
         this.uiHandler = uiHandler;
         this.context = context;
         gson = new Gson();
@@ -56,7 +61,7 @@ public class WorkPopController {
                 public void run() {
                     if (fileList != null && fileList.size() > 0) {
                         Log.d(TAG, "fetchFileList() from memory fileList.size(): " + fileList.size());
-                        loadFileSize();
+                        loadFileDetails();
                     } else {
                         String fileListAsJsonString = getFileListAsString();
                         if (TextUtils.isEmpty(fileListAsJsonString)) {
@@ -65,7 +70,7 @@ public class WorkPopController {
                             JsonArray jsonArray = getFileListJsonArray(fileListAsJsonString);
                             fileList = Arrays.asList(gson.fromJson(jsonArray, FileVO[].class));
                             Log.d(TAG, "fetchFileList() from JSON file fileList.size(): " + fileList.size());
-                            loadFileSize();
+                            loadFileDetails();
                         }
                     }
                 }
@@ -97,39 +102,68 @@ public class WorkPopController {
     private JsonArray getFileListJsonArray(String fileListAsJsonString) {
         JsonParser jsonParser = new JsonParser();
         JsonObject jsonObject = (JsonObject) jsonParser.parse(fileListAsJsonString);
-        //Log.d(TAG, "getFileListJsonArray, jsonArray: " + jsonArray);
         return jsonObject.getAsJsonArray("files");
 
     }
 
-    private void loadFileSize() {
+    private synchronized void loadFileDetails() {
         if (executorService != null && !executorService.isShutdown()) {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     for (FileVO fileVO : fileList) {
-                        //TODO: check if the file exists locally and load the file size from that.
-                        HttpURLConnection httpUrlConnection = null;
-                        try {
-                            URL url = new URL(fileVO.getUrl());
-                            httpUrlConnection = (HttpURLConnection) url.openConnection();
-                            httpUrlConnection.setRequestMethod("HEAD");
-                            httpUrlConnection.getInputStream();
-                            //fileList.get(fileList.indexOf(fileVO)).setFileSize(httpUrlConnection.getContentLength());
-                            fileVO.setFileSize(httpUrlConnection.getContentLength());
-                        } catch (IOException e) {
-                            Log.e(TAG, "IOException thrown for file: " + fileVO.getName());
-                            //fileList.get(fileList.indexOf(fileVO)).setFileSize(0);
-                            fileVO.setFileSize(0);
-                        } finally {
-                            if (httpUrlConnection != null) {
-                                httpUrlConnection.disconnect();
-                            }
-                        }
+                        loadFileState(fileVO);
+                        loadFileSize(fileVO);
                     }
                     notifyFileFetchSuccess(fileList);
                 }
             });
+        }
+    }
+
+    private void loadFileState(FileVO fileVO){
+        if(diskController.doesFileExist(fileVO.getUrl())){
+            if(diskController.getCurrentFileDownloadUrl()!=null && fileVO.getUrl().equalsIgnoreCase(diskController.getCurrentFileDownloadUrl())){
+                fileVO.setFileState(FileVO.FileState.DOWNLOADING);
+                fileVO.setBytesCompleted(diskController.getCurrentBytesCompleted());
+            } else {
+                fileVO.setFileState(FileVO.FileState.DOWNLOADED);
+            }
+        } else {
+            fileVO.setFileState(FileVO.FileState.NOT_EXIST);
+        }
+    }
+
+    private void loadFileSize(FileVO fileVO){
+        if(diskController.doesFileExist(fileVO.getUrl())){
+            //File exists, get the actual file size;
+            File localFile = diskController.getFileByUrl(fileVO.getUrl());
+            if(localFile!=null){
+                fileVO.setFileSize(localFile.length());
+            }
+        }else {
+            fetchFileSizeFromWeb(fileVO);
+        }
+    }
+
+    private void fetchFileSizeFromWeb(FileVO fileVO){
+        //Doing this to avoid repeated network calls when refreshing the FileList.
+        if(fileVO.getFileSize() == 0) {
+            HttpURLConnection httpUrlConnection = null;
+            try {
+                URL url = new URL(fileVO.getUrl());
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setRequestMethod("HEAD");
+                httpUrlConnection.getInputStream();
+                fileVO.setFileSize(httpUrlConnection.getContentLength());
+            } catch (IOException e) {
+                Log.e(TAG, "IOException thrown for file: " + fileVO.getName());
+                fileVO.setFileSize(0);
+            } finally {
+                if (httpUrlConnection != null) {
+                    httpUrlConnection.disconnect();
+                }
+            }
         }
     }
 
@@ -171,4 +205,47 @@ public class WorkPopController {
         }
     }
 
+    @Override
+    public void onDownloadProgress(final FileVO fileVO, final long bytesCompleted) {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if(fileList!=null && fileList.contains(fileVO)){
+                        fileList.get(fileList.indexOf(fileVO)).setBytesCompleted(bytesCompleted);
+                        fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.DOWNLOADING);
+                        notifyFileFetchSuccess(fileList);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onDownloadFinished(final FileVO fileVO) {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if(fileList!=null && fileList.contains(fileVO)){
+                        fileList.get(fileList.indexOf(fileVO)).setBytesCompleted(0);
+                        fileList.get(fileList.indexOf(fileVO)).setFileState(FileVO.FileState.DOWNLOADED);
+                        notifyFileFetchSuccess(fileList);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onFilesCleared() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    fetchFileList();
+                }
+            });
+        }
+    }
 }
